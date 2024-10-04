@@ -1,0 +1,38 @@
+name: CI Pipeline for Linting Kubernetes Manifests
+
+# Run the pipeline on every push and pull request
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-k8s-manifests:
+    name: Lint and Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the code from the repository
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Python (Kubernetes manifest linter uses Python)
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      # Step 3: Install kubeval (the linter for Kubernetes manifests)
+      - name: Install kubeval
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubeval
+
+      # Step 4: Lint all Kubernetes YAML files in the directory
+      - name: Lint Kubernetes Manifests
+        run: |
+          kubeval ./Deployment.yaml
+          kubeval ./Service.yaml
