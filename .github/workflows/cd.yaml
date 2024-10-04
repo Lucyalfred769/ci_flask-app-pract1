@@ -1,6 +1,5 @@
-name: CD Pipeline for Docker Image Build and Kubernetes Deployment
+name: CD Pipeline for Docker Image Deployment
 
-# Trigger the pipeline on push to the main branch
 on:
   push:
     branches:
@@ -8,43 +7,37 @@ on:
 
 jobs:
   build-and-deploy:
-    name: Build Docker Image and Deploy to Kubernetes
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out the code from the repository
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      # Step 2: Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      # Step 3: Log in to Docker Hub
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # Step 4: Build Docker image
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/simple-webapp:latest .
+        run: |
+          docker build -t your_dockerhub_username/simple-webapp:${{ github.sha }} .
 
-      # Step 5: Push Docker image to Docker Hub
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/simple-webapp:latest
+        run: |
+          docker push your_dockerhub_username/simple-webapp:${{ github.sha }}
 
-      # Step 6: Set up kubectl
       - name: Set up kubectl
-        uses: azure/setup-kubectl@v1
-        with:
-          version: 'v1.22.0'  # Adjust to your desired version
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
 
-      # Step 7: Configure kubeconfig from GitHub Secret
-      - name: Set KUBECONFIG file
+      - name: Configure kubeconfig
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $HOME/.kube/config
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
 
-      # Step 8: Deploy to Kubernetes cluster
       - name: Deploy to Kubernetes
-        run: kubectl apply -f ./Deployment.yaml
+        run: |
+          kubectl apply -f ./k8s/deployment.yaml
+          kubectl apply -f ./k8s/service.yaml
+          kubectl rollout status deployment/simple-webapp
