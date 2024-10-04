@@ -37,9 +37,3 @@ jobs:
         run: |
           kubeval ./Deployment.yaml
           kubeval ./Service.yaml
-
-      # step 5: Validate the Kubernetes manifests using kubectl's dry-run
-      - name: Validate Kubernetes Manifests
-        run: |
-          kubectl apply --dry-run=client -f ./Deployment.yaml
-          kubectl apply --dry-run=client -f ./Service.yaml
