@@ -29,6 +29,12 @@ jobs:
       env:
         DOCKER_HOST: tcp://${{ secrets.DOCKER_HOST }}:80
       run: |
-        docker stop simple-webapp || true
-        docker rm simple-webapp || true
+        # Login to DockerHub
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        
+        # Stop and remove any existing containers
+        docker stop simple-webapp:1.0 || true
+        docker rm simple-webapp:1.0 || true
+
+        # Run the new container with updated image
         docker run -d -p 80:8080 --name simple-webapp simple-webapp:1.0
